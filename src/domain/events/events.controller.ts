@@ -22,8 +22,12 @@ export class EventsController {
   }
 
   @Get()
-  getMany(@Query('filter') filter: string) {
-    return this.eventsService.getMany(filter);
+  getMany(
+    @Query('sort') sort: string,
+    @Query('range') range: string,
+    @Query('filter') filter: string,
+  ) {
+    return this.eventsService.getList(sort, range, filter);
   }
 
   @Get(':id')

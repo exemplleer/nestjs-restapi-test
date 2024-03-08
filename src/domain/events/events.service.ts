@@ -28,6 +28,33 @@ export class EventsService {
     return await this.eventRepository.save(event);
   }
 
+  async getList(sort: string, range: string, filter: string) {
+    try {
+      const parsedSort = sort ? JSON.parse(sort) : ['id', 'ASC'];
+      const parsedRange = range ? JSON.parse(range) : [0, 9];
+      const parsedFilter = filter ? JSON.parse(filter) : {};
+      const [sortField, sortOrder] = parsedSort;
+      const [rangeStart, rangeEnd] = parsedRange;
+      const filterProps = parsedFilter;
+
+      const events = await this.eventRepository.find({
+        where: {
+          ...filterProps,
+        },
+        order: {
+          [sortField]: sortOrder,
+        },
+        skip: rangeStart,
+        take: rangeEnd - rangeStart + 1,
+        relations: { dates: true, venue: true },
+      });
+
+      return events;
+    } catch (error) {
+      return [];
+    }
+  }
+
   async getMany(filter: string) {
     if (!filter) {
       return this.eventRepository.find({
@@ -55,8 +82,8 @@ export class EventsService {
     }
   }
 
-  getOne(id: number) {
-    const event = this.eventRepository.findOne({
+  async getOne(id: number) {
+    const event = await this.eventRepository.findOne({
       where: { id },
       relations: { dates: true, venue: true },
     });
