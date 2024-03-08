@@ -23,7 +23,9 @@ export class Event {
   @Column({ nullable: true })
   thumbnail: string;
 
-  @OneToMany(() => EventDate, (eventDate) => eventDate.event)
+  @OneToMany(() => EventDate, (eventDate) => eventDate.event, {
+    onDelete: 'CASCADE',
+  })
   dates: EventDate[];
 
   @ManyToOne(() => Venue, (venue) => venue.events)

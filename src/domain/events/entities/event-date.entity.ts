@@ -12,6 +12,6 @@ export class EventDate {
   @Column({ type: 'date' })
   endDate: Date;
 
-  @ManyToOne(() => Event, (event) => event.dates, { cascade: true })
+  @ManyToOne(() => Event, (event) => event.dates)
   event: Event;
 }

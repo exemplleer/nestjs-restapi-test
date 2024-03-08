@@ -6,6 +6,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './entities/event.entity';
 import { EventDate } from './entities/event-date.entity';
+import { FilesService } from 'src/files/files.service';
 
 @Injectable()
 export class EventsService {
@@ -15,11 +16,21 @@ export class EventsService {
     @InjectRepository(EventDate)
     private readonly eventDateRepository: Repository<EventDate>,
     private venuesService: VenuesService,
+    private filesService: FilesService,
   ) {}
 
-  async create(createEventDto: CreateEventDto) {
+  async create(createEventDto: CreateEventDto, thumbnail: any) {
     const { dates, venueId, ...eventData } = createEventDto;
-    const event = this.eventRepository.create(eventData);
+
+    const thumbnailFilename = thumbnail
+      ? await this.filesService.createFile(thumbnail)
+      : null;
+
+    const event = this.eventRepository.create({
+      ...eventData,
+      thumbnail: thumbnailFilename,
+    });
+
     const venue = await this.venuesService.getOne(venueId);
     const createdDates = this.eventDateRepository.create(dates);
     event.venue = venue;
@@ -95,7 +106,7 @@ export class EventsService {
     return event;
   }
 
-  async update(id: number, updateEventDto: UpdateEventDto) {
+  async update(id: number, updateEventDto: UpdateEventDto, thumbnail) {
     const { dates, venueId, ...eventData } = updateEventDto;
     const event = await this.eventRepository.findOne({
       where: { id },
@@ -106,7 +117,11 @@ export class EventsService {
       throw new NotFoundException(`Event with id '${id}' not found`);
     }
 
-    dates.forEach(async (date) => {
+    event.thumbnail = thumbnail
+      ? await this.filesService.updateFile(event.thumbnail, thumbnail)
+      : event.thumbnail;
+
+    dates?.forEach(async (date) => {
       const { id: dateId, ...dateData } = date;
       const dateWithEvent = { ...dateData, event };
       if (dateId) {
@@ -125,13 +140,23 @@ export class EventsService {
   }
 
   async delete(id: number) {
-    const event = await this.eventRepository.findOne({ where: { id } });
+    const event = await this.eventRepository.findOne({
+      where: { id },
+      relations: { dates: true },
+    });
 
     if (!event) {
       throw new NotFoundException(`Event with id '${id}' not found`);
     }
 
-    await this.eventRepository.remove(event);
-    return { success: true };
+    try {
+      const thumbnailFilename = event.thumbnail;
+      await this.eventDateRepository.remove(event.dates);
+      await this.eventRepository.remove(event);
+      await this.filesService.deleteFile(thumbnailFilename);
+      return { success: true };
+    } catch (error) {
+      return { success: false };
+    }
   }
 }

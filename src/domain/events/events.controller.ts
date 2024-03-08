@@ -7,18 +7,22 @@ import {
   Delete,
   Put,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('events')
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   @Post()
-  create(@Body() createEventDto: CreateEventDto) {
-    return this.eventsService.create(createEventDto);
+  @UseInterceptors(FileInterceptor('thumbnail'))
+  create(@Body() createEventDto: CreateEventDto, @UploadedFile() thumbnail) {
+    return this.eventsService.create(createEventDto, thumbnail);
   }
 
   @Get()
@@ -36,8 +40,13 @@ export class EventsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto) {
-    return this.eventsService.update(+id, updateEventDto);
+  @UseInterceptors(FileInterceptor('thumbnail'))
+  update(
+    @Param('id') id: string,
+    @Body() updateEventDto: UpdateEventDto,
+    @UploadedFile() thumbnail,
+  ) {
+    return this.eventsService.update(+id, updateEventDto, thumbnail);
   }
 
   @Delete(':id')
