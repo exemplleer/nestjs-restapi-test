@@ -6,10 +6,10 @@ export class EventDate {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'timestamp with time zone' })
   startDate: Date;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'timestamp with time zone' })
   endDate: Date;
 
   @ManyToOne(() => Event, (event) => event.dates)
