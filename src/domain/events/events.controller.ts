@@ -39,9 +39,14 @@ export class EventsController {
 
   @ApiOperation({ summary: 'Get all events' })
   @ApiResponse({ description: 'Return all events', status: 200 })
-  @ApiQuery({ name: 'sort', required: false })
-  @ApiQuery({ name: 'range', required: false })
-  @ApiQuery({ name: 'filter', required: false })
+  @ApiQuery({
+    name: 'filter',
+    required: false,
+    description: 'filter={"id": [1, 2]}',
+    example: ' filter={"status": "APPROVED"}',
+  })
+  @ApiQuery({ name: 'sort', required: false, example: 'sort=["id", "DESC"]' })
+  @ApiQuery({ name: 'range', required: false, example: 'range=[0, 9]' })
   @Get()
   getMany(
     @Query('sort') sort: string,
