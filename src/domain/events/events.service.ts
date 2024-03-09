@@ -52,10 +52,16 @@ export class EventsService {
       const parsedFilter = filter ? JSON.parse(filter) : {};
       const [sortField, sortOrder] = parsedSort;
       const [rangeStart, rangeEnd] = parsedRange;
-      const filterProps = parsedFilter;
+
+      const filterProps = Object.keys(parsedFilter).reduce((acc, prop) => {
+        acc[prop] = Array.isArray(parsedFilter[prop])
+          ? In(parsedFilter[prop])
+          : parsedFilter[prop];
+        return acc;
+      }, {});
 
       const events = await this.eventRepository.find({
-        where: { ...filterProps },
+        where: filterProps,
         order: { [sortField]: sortOrder },
         skip: rangeStart,
         take: rangeEnd - rangeStart + 1,
