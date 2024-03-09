@@ -9,22 +9,39 @@ import {
   Query,
   UseInterceptors,
   UploadedFile,
+  HttpCode,
 } from '@nestjs/common';
+import {
+  ApiConsumes,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
+@ApiTags('events')
 @Controller('events')
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
+  @ApiOperation({ summary: 'Create new event' })
+  @ApiResponse({ status: 201, description: 'Event created' })
+  @ApiConsumes('multipart/form-data')
   @Post()
   @UseInterceptors(FileInterceptor('thumbnail'))
   create(@Body() createEventDto: CreateEventDto, @UploadedFile() thumbnail) {
     return this.eventsService.create(createEventDto, thumbnail);
   }
 
+  @ApiOperation({ summary: 'Get all events' })
+  @ApiResponse({ description: 'Return all events', status: 200 })
+  @ApiQuery({ name: 'sort', required: false })
+  @ApiQuery({ name: 'range', required: false })
+  @ApiQuery({ name: 'filter', required: false })
   @Get()
   getMany(
     @Query('sort') sort: string,
@@ -34,11 +51,16 @@ export class EventsController {
     return this.eventsService.getList(sort, range, filter);
   }
 
+  @ApiOperation({ summary: 'Get one event' })
+  @ApiResponse({ description: 'Return one event', status: 200 })
   @Get(':id')
   getOne(@Param('id') id: string) {
     return this.eventsService.getOne(+id);
   }
 
+  @ApiOperation({ summary: 'Update event' })
+  @ApiResponse({ description: 'Event updated', status: 200 })
+  @ApiConsumes('multipart/form-data')
   @Put(':id')
   @UseInterceptors(FileInterceptor('thumbnail'))
   update(
@@ -49,6 +71,9 @@ export class EventsController {
     return this.eventsService.update(+id, updateEventDto, thumbnail);
   }
 
+  @ApiOperation({ summary: 'Delete event' })
+  @ApiResponse({ description: 'Event deleted', status: 204 })
+  @HttpCode(204)
   @Delete(':id')
   delete(@Param('id') id: string) {
     return this.eventsService.delete(+id);
