@@ -1,12 +1,18 @@
-import { VenuesService } from './../venues/venues.service';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { CreateEventDto } from './dto/create-event.dto';
-import { UpdateEventDto } from './dto/update-event.dto';
+import { VenuesService } from './../venues/venues.service';
+import { FilesService } from 'src/files/files.service';
 import { Event } from './entities/event.entity';
 import { EventDate } from './entities/event-date.entity';
-import { FilesService } from 'src/files/files.service';
+import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
+import { UpdateEventDateDto } from './dto/update-event-date.dto';
+import * as moment from 'moment-timezone';
 
 @Injectable()
 export class EventsService {
@@ -49,105 +55,69 @@ export class EventsService {
       const filterProps = parsedFilter;
 
       const events = await this.eventRepository.find({
-        where: {
-          ...filterProps,
-        },
-        order: {
-          [sortField]: sortOrder,
-        },
+        where: { ...filterProps },
+        order: { [sortField]: sortOrder },
         skip: rangeStart,
         take: rangeEnd - rangeStart + 1,
-        relations: { dates: true, venue: true },
       });
-
-      return events;
+      const eventsWithSyncTz = events.map((event) =>
+        this.synchronizeTimezone(event),
+      );
+      return eventsWithSyncTz;
     } catch (error) {
       return [];
     }
   }
 
   async getMany(filter: string) {
-    if (!filter) {
-      return this.eventRepository.find({
-        relations: { dates: true, venue: true },
-      });
-    }
-
+    if (!filter) return this.eventRepository.find();
     try {
       const parsedIds = JSON.parse(filter).id;
-
-      if (!Array.isArray(parsedIds)) {
-        return [];
-      }
-
+      if (!Array.isArray(parsedIds)) return [];
       const ids: number[] = parsedIds.map(Number).filter((i) => i);
-
-      return this.eventRepository.find({
-        where: {
-          id: In(ids),
-        },
-        relations: { dates: true, venue: true },
+      const events = await this.eventRepository.find({
+        where: { id: In(ids) },
       });
+      const eventsWithSyncTz = events.map((event) =>
+        this.synchronizeTimezone(event),
+      );
+      return eventsWithSyncTz;
     } catch (e) {
       return [];
     }
   }
 
   async getOne(id: number) {
-    const event = await this.eventRepository.findOne({
-      where: { id },
-      relations: { dates: true, venue: true },
-    });
-
-    if (!event) {
-      throw new NotFoundException(`Event with id '${id}' not found`);
-    }
-
-    return event;
+    if (isNaN(id)) return new BadRequestException('Invalid query parameters');
+    const event = await this.eventRepository.findOne({ where: { id } });
+    if (!event) throw new NotFoundException(`Event with id '${id}' not found`);
+    const eventWithSyncTz = this.synchronizeTimezone(event);
+    return eventWithSyncTz;
   }
 
   async update(id: number, updateEventDto: UpdateEventDto, thumbnail) {
     const { dates, venueId, ...eventData } = updateEventDto;
-    const event = await this.eventRepository.findOne({
-      where: { id },
-      relations: { dates: true, venue: true },
-    });
+    const event = await this.eventRepository.findOne({ where: { id } });
+    if (!event) throw new NotFoundException(`Event with id '${id}' not found`);
+    const newEvent = this.eventRepository.merge(event, eventData);
 
-    if (!event) {
-      throw new NotFoundException(`Event with id '${id}' not found`);
-    }
-
-    event.thumbnail = thumbnail
-      ? await this.filesService.updateFile(event.thumbnail, thumbnail)
+    newEvent.thumbnail = thumbnail
+      ? await this.filesService.updateFile(newEvent.thumbnail, thumbnail)
       : event.thumbnail;
 
-    dates?.forEach(async (date) => {
-      const { id: dateId, ...dateData } = date;
-      const dateWithEvent = { ...dateData, event };
-      if (dateId) {
-        await this.eventDateRepository.update(dateId, dateWithEvent);
-      }
-      const newDate = this.eventDateRepository.create(dateWithEvent);
-      await this.eventDateRepository.save(newDate);
-    });
+    if (dates) this.createOrUpdateEventDates(dates, event);
 
-    const newEvent = this.eventRepository.merge(event, eventData);
-    const newVenue = await this.venuesService.getOne(venueId);
-    newEvent.venue = newVenue;
-    await this.eventRepository.save(newEvent);
+    if (venueId) {
+      const newVenue = await this.venuesService.getOne(venueId);
+      newEvent.venue = newVenue;
+    }
 
-    return { success: true };
+    return await this.eventRepository.save(newEvent);
   }
 
   async delete(id: number) {
-    const event = await this.eventRepository.findOne({
-      where: { id },
-      relations: { dates: true },
-    });
-
-    if (!event) {
-      throw new NotFoundException(`Event with id '${id}' not found`);
-    }
+    const event = await this.eventRepository.findOne({ where: { id } });
+    if (!event) throw new NotFoundException(`Event with id '${id}' not found`);
 
     try {
       const thumbnailFilename = event.thumbnail;
@@ -158,5 +128,33 @@ export class EventsService {
     } catch (error) {
       return { success: false };
     }
+  }
+
+  private synchronizeTimezone(event: Event): Event {
+    const newEvent = event;
+    const timezone = newEvent?.venue?.timezone || null;
+    newEvent?.dates.forEach((date) => {
+      date.startDate = moment.tz(date.startDate, timezone).format();
+      date.endDate = moment.tz(date.endDate, timezone).format();
+    });
+    return newEvent;
+  }
+
+  private async createOrUpdateEventDates(
+    dates: UpdateEventDateDto[],
+    event: Event,
+  ): Promise<void> {
+    await Promise.all(
+      dates.map(async (date) => {
+        const { id: dateId, ...dateData } = date;
+        const dateWithEvent = { ...dateData, event };
+        if (dateId) {
+          await this.eventDateRepository.update(dateId, dateWithEvent);
+        } else {
+          const newDate = this.eventDateRepository.create(dateWithEvent);
+          await this.eventDateRepository.save(newDate);
+        }
+      }),
+    );
   }
 }

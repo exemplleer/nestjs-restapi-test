@@ -24,11 +24,12 @@ export class Event {
   thumbnail: string;
 
   @OneToMany(() => EventDate, (eventDate) => eventDate.event, {
-    onDelete: 'CASCADE',
+    cascade: true,
+    eager: true,
   })
   dates: EventDate[];
 
-  @ManyToOne(() => Venue, (venue) => venue.events)
+  @ManyToOne(() => Venue, (venue) => venue.events, { eager: true })
   venue: Venue;
 
   @Column({ type: 'enum', enum: EventStatus, default: EventStatus.UNAPPROVED })

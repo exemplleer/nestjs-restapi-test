@@ -7,10 +7,10 @@ export class EventDate {
   id: number;
 
   @Column({ type: 'timestamp with time zone' })
-  startDate: Date;
+  startDate: string;
 
   @Column({ type: 'timestamp with time zone' })
-  endDate: Date;
+  endDate: string;
 
   @ManyToOne(() => Event, (event) => event.dates)
   event: Event;
