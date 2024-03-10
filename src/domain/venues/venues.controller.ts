@@ -7,7 +7,10 @@ import { VenuesService } from './venues.service';
 export class VenuesController {
   constructor(private readonly venuesService: VenuesService) {}
 
-  @ApiOperation({ summary: 'Get all venues' })
+  @ApiOperation({
+    summary: 'Get all venues',
+    description: 'Return empty array if the query string is invalid',
+  })
   @ApiResponse({ description: 'Return all events', status: 200 })
   @ApiQuery({ name: 'filter', required: false })
   @Get()

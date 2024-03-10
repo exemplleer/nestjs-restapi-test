@@ -30,6 +30,10 @@ export class EventsController {
 
   @ApiOperation({ summary: 'Create new event' })
   @ApiResponse({ status: 201, description: 'Event created' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request. Example: message: ["name must be a string"]',
+  })
   @ApiConsumes('multipart/form-data')
   @Post()
   @UseInterceptors(FileInterceptor('thumbnail'))
@@ -37,7 +41,10 @@ export class EventsController {
     return this.eventsService.create(createEventDto, thumbnail);
   }
 
-  @ApiOperation({ summary: 'Get all events' })
+  @ApiOperation({
+    summary: 'Get all events',
+    description: 'Return empty array if the query string is invalid',
+  })
   @ApiResponse({ description: 'Return all events', status: 200 })
   @ApiQuery({
     name: 'filter',
@@ -65,6 +72,10 @@ export class EventsController {
 
   @ApiOperation({ summary: 'Update event' })
   @ApiResponse({ description: 'Event updated', status: 200 })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request. Example: message: ["name must be a string"]',
+  })
   @ApiConsumes('multipart/form-data')
   @Put(':id')
   @UseInterceptors(FileInterceptor('thumbnail'))
