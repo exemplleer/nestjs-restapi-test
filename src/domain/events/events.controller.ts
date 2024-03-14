@@ -37,7 +37,10 @@ export class EventsController {
   @ApiConsumes('multipart/form-data')
   @Post()
   @UseInterceptors(FileInterceptor('thumbnail'))
-  create(@Body() createEventDto: CreateEventDto, @UploadedFile() thumbnail) {
+  create(
+    @Body() createEventDto: CreateEventDto,
+    @UploadedFile() thumbnail: Express.Multer.File,
+  ) {
     return this.eventsService.create(createEventDto, thumbnail);
   }
 
@@ -82,7 +85,7 @@ export class EventsController {
   update(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
-    @UploadedFile() thumbnail,
+    @UploadedFile() thumbnail: Express.Multer.File,
   ) {
     return this.eventsService.update(+id, updateEventDto, thumbnail);
   }

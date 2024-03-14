@@ -12,7 +12,11 @@ export class VenuesController {
     description: 'Return empty array if the query string is invalid',
   })
   @ApiResponse({ description: 'Return all events', status: 200 })
-  @ApiQuery({ name: 'filter', required: false })
+  @ApiQuery({
+    name: 'filter',
+    required: false,
+    example: 'filter={"event_id":1}',
+  })
   @Get()
   getManyReference(@Query('filter') filter: string) {
     return this.venuesService.getManyReference(filter);

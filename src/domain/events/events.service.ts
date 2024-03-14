@@ -21,11 +21,11 @@ export class EventsService {
     private readonly eventRepository: Repository<Event>,
     @InjectRepository(EventDate)
     private readonly eventDateRepository: Repository<EventDate>,
-    private venuesService: VenuesService,
-    private filesService: FilesService,
+    private readonly venuesService: VenuesService,
+    private readonly filesService: FilesService,
   ) {}
 
-  async create(createEventDto: CreateEventDto, thumbnail: any) {
+  async create(createEventDto: CreateEventDto, thumbnail: Express.Multer.File) {
     const { dates, venueId, ...eventData } = createEventDto;
 
     const thumbnailFilename = thumbnail
@@ -76,7 +76,7 @@ export class EventsService {
   }
 
   async getMany(filter: string) {
-    if (!filter) return this.eventRepository.find();
+    if (!filter) return await this.eventRepository.find();
     try {
       const parsedIds = JSON.parse(filter).id;
       if (!Array.isArray(parsedIds)) return [];
@@ -101,7 +101,11 @@ export class EventsService {
     return eventWithSyncTz;
   }
 
-  async update(id: number, updateEventDto: UpdateEventDto, thumbnail) {
+  async update(
+    id: number,
+    updateEventDto: UpdateEventDto,
+    thumbnail: Express.Multer.File,
+  ) {
     const { dates, venueId, ...eventData } = updateEventDto;
     const event = await this.eventRepository.findOne({ where: { id } });
     if (!event) throw new NotFoundException(`Event with id '${id}' not found`);

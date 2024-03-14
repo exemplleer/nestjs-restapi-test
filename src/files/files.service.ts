@@ -5,43 +5,34 @@ import * as uuid from 'uuid';
 
 @Injectable()
 export class FilesService {
-  private static readonly MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
-  private static readonly ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
-  private static readonly UPLOAD_DIRECTORY = path.resolve(
-    __dirname,
-    '..',
-    'static',
-  );
+  private readonly MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
+  private readonly ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
+  private readonly UPLOAD_DIRECTORY = path.resolve(__dirname, '..', 'static');
 
-  private validateFile(file: any): void {
-    const extname = path.extname(file.originalname);
+  private validateFile(file: Express.Multer.File): void {
+    const extname = path.extname(file.originalname).toLowerCase();
     const size = file.buffer.length;
 
-    if (size > FilesService.MAX_FILE_SIZE) {
+    if (size > this.MAX_FILE_SIZE) {
       throw new BadRequestException(`File size exceeds the limit of 4MB`);
     }
 
-    if (!FilesService.ALLOWED_EXTENSIONS.includes(extname)) {
+    if (!this.ALLOWED_EXTENSIONS.includes(extname)) {
       throw new BadRequestException(
-        `File type "${extname}" is not supported. Supported types: ${FilesService.ALLOWED_EXTENSIONS.join(', ')}`,
+        `File type "${extname}" is not supported. Supported types: ${this.ALLOWED_EXTENSIONS.join(', ')}`,
       );
     }
   }
 
-  async createFile(file): Promise<string> | null {
+  async createFile(file: Express.Multer.File): Promise<string> | null {
     this.validateFile(file);
     try {
       const extname = path.extname(file.originalname) || '.auto.jpeg';
       const filename = `${uuid.v4()}${extname}`;
-      const uploadDirectory = FilesService.UPLOAD_DIRECTORY;
-      const isUploadDirectoryExists = await fs.exists(uploadDirectory);
+      const filepath = path.join(this.UPLOAD_DIRECTORY, filename);
 
-      if (!isUploadDirectoryExists) {
-        await fs.mkdir(uploadDirectory, { recursive: true });
-      }
-
-      await fs.writeFile(path.join(uploadDirectory, filename), file.buffer);
-
+      await fs.ensureDir(this.UPLOAD_DIRECTORY);
+      await fs.writeFile(filepath, file.buffer);
       return filename;
     } catch (e) {
       console.log(Logger.error(`Create file error: ${e}`));
@@ -49,16 +40,17 @@ export class FilesService {
     }
   }
 
-  async updateFile(filename, file): Promise<string> | null {
+  async updateFile(
+    filename: string | null,
+    file: Express.Multer.File,
+  ): Promise<string> | null {
     this.validateFile(file);
-    const uploadDirectory = FilesService.UPLOAD_DIRECTORY;
     try {
       let fname = filename;
-      if (!fname) {
-        fname = await this.createFile(file);
-      }
-      await fs.access(path.resolve(uploadDirectory, fname));
-      await fs.writeFile(path.resolve(uploadDirectory, fname), file.buffer);
+      if (!fname) fname = await this.createFile(file);
+      const filepath = path.join(this.UPLOAD_DIRECTORY, fname);
+      await fs.access(filepath);
+      await fs.writeFile(filepath, file.buffer);
       return fname;
     } catch (e) {
       console.log(Logger.error(`Update file error: ${e}`));
@@ -66,10 +58,10 @@ export class FilesService {
     }
   }
 
-  async deleteFile(filename): Promise<boolean> {
+  async deleteFile(filename: string): Promise<boolean> {
     if (!filename) return true;
     try {
-      const filepath = path.resolve(FilesService.UPLOAD_DIRECTORY, filename);
+      const filepath = path.join(this.UPLOAD_DIRECTORY, filename);
       await fs.access(filepath);
       await fs.unlink(filepath);
       return true;

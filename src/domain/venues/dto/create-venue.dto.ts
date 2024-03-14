@@ -16,9 +16,9 @@ export class CreateVenueDto {
   @ApiProperty({ example: 'Europe/Moscow' })
   readonly timezone: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   readonly zipCode?: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   readonly address?: string;
 }

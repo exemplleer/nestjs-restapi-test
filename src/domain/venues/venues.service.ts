@@ -11,22 +11,16 @@ export class VenuesService {
   ) {}
 
   async getOne(id: number) {
-    const venue = await this.venueRepository.findOne({
-      where: { id },
-    });
-
-    if (!venue) {
-      throw new NotFoundException(`Venue with id '${id}' not found`);
-    }
-
+    const venue = await this.venueRepository.findOneBy({ id });
+    if (!venue) throw new NotFoundException(`Venue with id '${id}' not found`);
     return venue;
   }
 
   async getManyReference(filter?: string) {
     if (!filter) {
       return this.venueRepository.find({
-        select: { events: true },
         relations: { events: true },
+        loadEagerRelations: false,
       });
     }
 
@@ -36,16 +30,14 @@ export class VenuesService {
         ? Number(parsedEventId)
         : null;
 
-      if (!eventId || Array.isArray(parsedEventId)) {
-        return [];
-      }
+      if (!eventId || Array.isArray(parsedEventId)) return [];
 
       return this.venueRepository.find({
         relations: { events: true },
         where: { events: { id: eventId } },
+        loadEagerRelations: false,
       });
     } catch (e) {
-      console.log(e);
       return [];
     }
   }

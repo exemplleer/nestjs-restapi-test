@@ -44,5 +44,6 @@ export class CreateEventDto {
 
   @ApiProperty({ enum: EventStatus })
   @IsEnum(EventStatus)
+  @IsOptional()
   readonly status?: EventStatus;
 }
