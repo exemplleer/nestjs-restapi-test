@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { EventModule } from './modules/event/event.module';
+import { VenueModule } from './modules/venue/venue.module';
+import { FileModule } from './shared/services/file/file.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { resolve } from 'path';
 
 @Module({
   imports: [
@@ -17,6 +22,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       autoLoadEntities: true,
       synchronize: true,
     }),
+    ServeStaticModule.forRoot({
+      rootPath: resolve(__dirname, 'static'),
+    }),
+
+    FileModule,
+
+    EventModule,
+    VenueModule,
   ],
   controllers: [],
   providers: [],
