@@ -1,19 +1,33 @@
-# Event App test-task
+# REST API - Event App
 
-## Running the app
+This repository contains the server-side application for management events
 
-1. Create postgres database with data of `install.sql`
-2. Rename `.env.example` in `.env` and update env vars
-3. Install deps `$ npm ci`
-4. Start the app
+## Requirements
+
+- Node.js v20.9.0 or higher
+- PostgresSQL v16 or higher
+
+## How to install
+
+### 1. Database
+
+Before you start, prepare the application database. The SQL code for creating the database can be found in [`install.sql`](./install.sql)
+
+### 2. Environment
+
+Rename the [`.env.example`](./.env.example) environment file to `.env` and update the variables
+
+### 3. Install dependencies and running
 
 ```bash
-# development
-$ npm run start
+$ npm install
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+# start in:
+$ npm run start:dev # watch mode
+$ npm run start # development
+$ npm run start:prod # production mode
 ```
+
+## Documentation
+
+View swagger documentation is available at `/docs` route
