@@ -7,7 +7,7 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { EventStatus } from '../types/event.types';
+import { EventStatus } from '../event.types';
 import { CreateEventDateDto } from './create-event-date.dto';
 import { Exclude, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -17,10 +17,9 @@ export class CreateEventDto {
   @IsString()
   readonly name: string;
 
-  @ApiProperty({ required: false })
-  @IsString()
-  @IsOptional()
-  readonly description?: string;
+  @ApiProperty({ example: 2 })
+  @IsInt()
+  readonly venueId: number;
 
   @Exclude()
   @ApiProperty({ required: false, type: 'string', format: 'binary' })
@@ -38,11 +37,13 @@ export class CreateEventDto {
   @Type(() => CreateEventDateDto)
   readonly dates: CreateEventDateDto[];
 
-  @ApiProperty({ example: 2 })
-  @IsInt()
-  readonly venueId: number;
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  readonly description?: string;
 
   @ApiProperty({ enum: EventStatus })
+  @IsOptional()
   @IsEnum(EventStatus)
   readonly status?: EventStatus;
 }

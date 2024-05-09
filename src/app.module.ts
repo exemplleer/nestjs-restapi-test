@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { EventsModule } from './domain/events/events.module';
-import { VenuesModule } from './domain/venues/venues.module';
-import { FilesModule } from './files/files.module';
+import { EventModule } from './modules/event/event.module';
+import { VenueModule } from './modules/venue/venue.module';
+import { FileModule } from './shared/services/file/file.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { resolve } from 'path';
 
@@ -25,9 +25,11 @@ import { resolve } from 'path';
     ServeStaticModule.forRoot({
       rootPath: resolve(__dirname, 'static'),
     }),
-    EventsModule,
-    VenuesModule,
-    FilesModule,
+
+    FileModule,
+
+    EventModule,
+    VenueModule,
   ],
   controllers: [],
   providers: [],

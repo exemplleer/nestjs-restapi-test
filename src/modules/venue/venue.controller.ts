@@ -1,11 +1,11 @@
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Controller, Get, Query } from '@nestjs/common';
-import { VenuesService } from './venues.service';
+import { VenueService } from './venue.service';
 
 @ApiTags('venues')
 @Controller('venues')
-export class VenuesController {
-  constructor(private readonly venuesService: VenuesService) {}
+export class VenueController {
+  constructor(private readonly venueService: VenueService) {}
 
   @ApiOperation({
     summary: 'Get all venues',
@@ -15,6 +15,6 @@ export class VenuesController {
   @ApiQuery({ name: 'filter', required: false })
   @Get()
   getManyReference(@Query('filter') filter: string) {
-    return this.venuesService.getManyReference(filter);
+    return this.venueService.getManyReference(filter);
   }
 }

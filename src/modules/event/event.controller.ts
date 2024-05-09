@@ -18,15 +18,15 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { EventsService } from './events.service';
+import { EventService } from './event.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('events')
 @Controller('events')
-export class EventsController {
-  constructor(private readonly eventsService: EventsService) {}
+export class EventController {
+  constructor(private readonly eventService: EventService) {}
 
   @ApiOperation({ summary: 'Create new event' })
   @ApiResponse({ status: 201, description: 'Event created' })
@@ -38,7 +38,7 @@ export class EventsController {
   @Post()
   @UseInterceptors(FileInterceptor('thumbnail'))
   create(@Body() createEventDto: CreateEventDto, @UploadedFile() thumbnail) {
-    return this.eventsService.create(createEventDto, thumbnail);
+    return this.eventService.create(createEventDto, thumbnail);
   }
 
   @ApiOperation({
@@ -60,14 +60,14 @@ export class EventsController {
     @Query('range') range: string,
     @Query('filter') filter: string,
   ) {
-    return this.eventsService.getList(sort, range, filter);
+    return this.eventService.getList(sort, range, filter);
   }
 
   @ApiOperation({ summary: 'Get one event' })
   @ApiResponse({ description: 'Return one event', status: 200 })
   @Get(':id')
   getOne(@Param('id') id: string) {
-    return this.eventsService.getOne(+id);
+    return this.eventService.getOne(+id);
   }
 
   @ApiOperation({ summary: 'Update event' })
@@ -84,7 +84,7 @@ export class EventsController {
     @Body() updateEventDto: UpdateEventDto,
     @UploadedFile() thumbnail,
   ) {
-    return this.eventsService.update(+id, updateEventDto, thumbnail);
+    return this.eventService.update(+id, updateEventDto, thumbnail);
   }
 
   @ApiOperation({ summary: 'Delete event' })
@@ -92,6 +92,6 @@ export class EventsController {
   @HttpCode(204)
   @Delete(':id')
   delete(@Param('id') id: string) {
-    return this.eventsService.delete(+id);
+    return this.eventService.delete(+id);
   }
 }

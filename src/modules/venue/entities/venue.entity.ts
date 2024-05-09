@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Event } from 'src/domain/events/entities/event.entity';
+import { Event } from 'src/modules/event/entities/event.entity';
 
 @Entity()
 export class Venue {

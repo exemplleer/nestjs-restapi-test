@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { VenuesService } from './../venues/venues.service';
-import { FilesService } from 'src/files/files.service';
+import { VenueService } from '../venue/venue.service';
+import { FileService } from 'src/shared/services/file/file.service';
 import { Event } from './entities/event.entity';
 import { EventDate } from './entities/event-date.entity';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -15,21 +15,21 @@ import { UpdateEventDateDto } from './dto/update-event-date.dto';
 import * as moment from 'moment-timezone';
 
 @Injectable()
-export class EventsService {
+export class EventService {
   constructor(
     @InjectRepository(Event)
     private readonly eventRepository: Repository<Event>,
     @InjectRepository(EventDate)
     private readonly eventDateRepository: Repository<EventDate>,
-    private venuesService: VenuesService,
-    private filesService: FilesService,
+    private venueService: VenueService,
+    private fileService: FileService,
   ) {}
 
   async create(createEventDto: CreateEventDto, thumbnail: any) {
     const { dates, venueId, ...eventData } = createEventDto;
 
     const thumbnailFilename = thumbnail
-      ? await this.filesService.createFile(thumbnail)
+      ? await this.fileService.createFile(thumbnail)
       : null;
 
     const event = this.eventRepository.create({
@@ -37,7 +37,7 @@ export class EventsService {
       thumbnail: thumbnailFilename,
     });
 
-    const venue = await this.venuesService.getOne(venueId);
+    const venue = await this.venueService.getOne(venueId);
     const createdDates = this.eventDateRepository.create(dates);
     event.venue = venue;
     event.dates = createdDates;
@@ -66,9 +66,7 @@ export class EventsService {
         skip: rangeStart,
         take: rangeEnd - rangeStart + 1,
       });
-      const eventsWithSyncTz = events.map((event) =>
-        this.synchronizeTimezone(event),
-      );
+      const eventsWithSyncTz = events.map(this.synchronizeTimezone);
       return eventsWithSyncTz;
     } catch (error) {
       return [];
@@ -81,12 +79,8 @@ export class EventsService {
       const parsedIds = JSON.parse(filter).id;
       if (!Array.isArray(parsedIds)) return [];
       const ids: number[] = parsedIds.map(Number).filter((i) => i);
-      const events = await this.eventRepository.find({
-        where: { id: In(ids) },
-      });
-      const eventsWithSyncTz = events.map((event) =>
-        this.synchronizeTimezone(event),
-      );
+      const events = await this.eventRepository.findBy({ id: In(ids) });
+      const eventsWithSyncTz = events.map(this.synchronizeTimezone);
       return eventsWithSyncTz;
     } catch (e) {
       return [];
@@ -107,14 +101,14 @@ export class EventsService {
     if (!event) throw new NotFoundException(`Event with id '${id}' not found`);
     const newEvent = this.eventRepository.merge(event, eventData);
 
-    newEvent.thumbnail = thumbnail
-      ? await this.filesService.updateFile(newEvent.thumbnail, thumbnail)
-      : event.thumbnail;
+    if (thumbnail) {
+      await this.fileService.updateFile(newEvent.thumbnail, thumbnail);
+    }
 
     if (dates) this.createOrUpdateEventDates(dates, event);
 
     if (venueId) {
-      const newVenue = await this.venuesService.getOne(venueId);
+      const newVenue = await this.venueService.getOne(venueId);
       newEvent.venue = newVenue;
     }
 
@@ -129,7 +123,7 @@ export class EventsService {
       const thumbnailFilename = event.thumbnail;
       await this.eventDateRepository.remove(event.dates);
       await this.eventRepository.remove(event);
-      await this.filesService.deleteFile(thumbnailFilename);
+      await this.fileService.deleteFile(thumbnailFilename);
       return { success: true };
     } catch (error) {
       return { success: false };

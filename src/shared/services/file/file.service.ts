@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as uuid from 'uuid';
 
 @Injectable()
-export class FilesService {
+export class FileService {
   private static readonly MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
   private static readonly ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
   private static readonly UPLOAD_DIRECTORY = path.resolve(
@@ -17,13 +17,13 @@ export class FilesService {
     const extname = path.extname(file.originalname);
     const size = file.buffer.length;
 
-    if (size > FilesService.MAX_FILE_SIZE) {
+    if (size > FileService.MAX_FILE_SIZE) {
       throw new BadRequestException(`File size exceeds the limit of 4MB`);
     }
 
-    if (!FilesService.ALLOWED_EXTENSIONS.includes(extname)) {
+    if (!FileService.ALLOWED_EXTENSIONS.includes(extname)) {
       throw new BadRequestException(
-        `File type "${extname}" is not supported. Supported types: ${FilesService.ALLOWED_EXTENSIONS.join(', ')}`,
+        `File type "${extname}" is not supported. Supported types: ${FileService.ALLOWED_EXTENSIONS.join(', ')}`,
       );
     }
   }
@@ -33,7 +33,7 @@ export class FilesService {
     try {
       const extname = path.extname(file.originalname) || '.auto.jpeg';
       const filename = `${uuid.v4()}${extname}`;
-      const uploadDirectory = FilesService.UPLOAD_DIRECTORY;
+      const uploadDirectory = FileService.UPLOAD_DIRECTORY;
       const isUploadDirectoryExists = await fs.exists(uploadDirectory);
 
       if (!isUploadDirectoryExists) {
@@ -49,9 +49,9 @@ export class FilesService {
     }
   }
 
-  async updateFile(filename, file): Promise<string> | null {
+  async updateFile(filename: string, file): Promise<string> | null {
     this.validateFile(file);
-    const uploadDirectory = FilesService.UPLOAD_DIRECTORY;
+    const uploadDirectory = FileService.UPLOAD_DIRECTORY;
     try {
       let fname = filename;
       if (!fname) {
@@ -69,7 +69,7 @@ export class FilesService {
   async deleteFile(filename): Promise<boolean> {
     if (!filename) return true;
     try {
-      const filepath = path.resolve(FilesService.UPLOAD_DIRECTORY, filename);
+      const filepath = path.resolve(FileService.UPLOAD_DIRECTORY, filename);
       await fs.access(filepath);
       await fs.unlink(filepath);
       return true;

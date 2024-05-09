@@ -6,8 +6,8 @@ import {
   OneToMany,
 } from 'typeorm';
 import { EventDate } from './event-date.entity';
-import { EventStatus } from '../types/event.types';
-import { Venue } from 'src/domain/venues/entities/venue.entity';
+import { EventStatus } from '../event.types';
+import { Venue } from 'src/modules/venue/entities/venue.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
